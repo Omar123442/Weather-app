@@ -34,19 +34,20 @@ async function fetchForecastData(lat, lon) {
 
     let forecastsByDate = {};
     data.list.forEach(forecast => {
-        let date = forecast.dt_txt.split(" ")[0];
-        if (!forecastsByDate[date]) {
-            forecastsByDate[date] = [];
+        let date = new Date(forecast.dt * 1000); 
+        let dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'long' }); 
+        if (!forecastsByDate[dayOfWeek]) {
+            forecastsByDate[dayOfWeek] = [];
         }
-        forecastsByDate[date].push(forecast);
+        forecastsByDate[dayOfWeek].push(forecast);
     });
 
-    let fiveDaysForecast = Object.keys(forecastsByDate).slice(0, 5).map(date => {
-        let dailyForecasts = forecastsByDate[date];
+    let fiveDaysForecast = Object.keys(forecastsByDate).slice(0, 5).map(dayOfWeek => {
+        let dailyForecasts = forecastsByDate[dayOfWeek];
         let temp_max = Math.max(...dailyForecasts.map(f => f.main.temp_max));
         let temp_min = Math.min(...dailyForecasts.map(f => f.main.temp_min));
         return {
-            date,
+            dayOfWeek,
             temp_max,
             temp_min,
             humidity: dailyForecasts[0].main.humidity,  
@@ -66,7 +67,7 @@ function weathercard(weatherItem) {
     return `
     <div class="col mt-2">
         <div class="pt-4 daily">
-            <p class="" style="display: inline-block;">${weatherItem.date}</p>
+            <p class="" style="display: inline-block;">${weatherItem.dayOfWeek}</p>
             <div class="mb-4">
                 <img class="ee" src="https://openweathermap.org/img/wn/${weatherItem.weather.icon}@2x.png" alt="">
             </div>
@@ -75,12 +76,13 @@ function weathercard(weatherItem) {
                 <i class="fa-solid fa-droplet"></i>
             </div>
             <span>&#92;</span> 
-            <p style="display: inline-block;">${weatherItem.wind_speed} m/s</p>
+            <p style="display: inline-block;">${weatherItem.wind_speed}</p>
             <div>
                 <i class="fa-solid fa-wind"></i>
             </div>
             <span>&#92;</span> 
-            <p style="display: inline-block;">${weatherItem.temp_max}°C</p>
+            <p style="display: inline-block; ">${weatherItem.temp_max}°C</p>
+            <span>&#92;</span> 
             <p>${weatherItem.temp_min}°C</p>
         </div> 
     </div>
@@ -103,7 +105,6 @@ async function fetchWeatherDataByCoords(lat, lon) {
     fetchForecastData(lat, lon);
 }
 
-
 function getUserLocation() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(position => {
@@ -121,6 +122,5 @@ function getUserLocation() {
         fetchWeatherDataByCity("London");
     }
 }
-
 
 window.onload = getUserLocation;
